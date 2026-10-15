@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>컴퓨터시스템 중간고사 문제풀이</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--tx:#1f2330;--sub:#6b7185;--pri:#4f46e5;--ok:#16a34a;--ng:#dc2626;--bd:#e3e5ef}
+@media(prefers-color-scheme:dark){:root{--bg:#12141c;--card:#1c1f2b;--tx:#e8eaf2;--sub:#9aa1b8;--pri:#818cf8;--bd:#2c3040}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:8px 0 4px}.sub{color:var(--sub);font-size:14px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;background:var(--pri);color:#fff;margin-top:8px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--pri);border:1.5px solid var(--pri)}
+.btn.ok{background:var(--ok)}.btn.ng{background:var(--ng)}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px}.row .btn{margin-top:8px}
+.stats{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{padding:8px 14px;border-radius:99px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);font-size:14px;cursor:pointer}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back{background:none;border:0;font-size:15px;color:var(--pri);padding:6px 0;cursor:pointer}
+.bar{flex:1;height:8px;background:var(--bd);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pri);width:0;transition:width .2s}
+.tag{display:inline-block;font-size:12px;color:var(--pri);font-weight:700;margin-bottom:6px}
+.q{font-size:17px;font-weight:600;word-break:keep-all}
+.q img,.ans img{max-width:100%;border-radius:8px;margin-top:10px;border:1px solid var(--bd);background:#fff;display:block}
+.ans{border-left:4px solid var(--ok);word-break:keep-all}
+.ans small{color:var(--sub)}
+.big{text-align:center;font-size:40px;font-weight:800;margin:10px 0}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.item button{border:0;background:none;color:var(--ng);font-size:13px}
+.hide{display:none}
+.opt{display:block;width:100%;text-align:left;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:12px 14px;margin-top:8px;font-size:15px;line-height:1.5;word-break:keep-all}
+.opt.right{border-color:var(--ok);background:rgba(22,163,74,.15)}.opt.bad{border-color:var(--ng);background:rgba(220,38,38,.15)}
+textarea{width:100%;min-height:96px;border:1.5px solid var(--bd);border-radius:12px;padding:12px;font:inherit;background:var(--card);color:var(--tx);resize:vertical}
+.mine{border-left:4px solid var(--pri);white-space:pre-wrap;word-break:break-all}
+.hl{color:#2563eb;font-weight:700}@media(prefers-color-scheme:dark){.hl{color:#60a5fa}}
+.hint{font-size:13px;color:var(--sub);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="data.js"></script>
+<script>
+const Q = window.QUESTIONS, KEY = "cs-quiz-v1";
+const $ = s => document.querySelector(s);
+// 저장소: 브라우저 localStorage만 사용 (서버 없음)
+let st = {wrong:{}, solved:{}, ok:{}};
+try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY)) || {}); } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} };
+const app = $("#app");
+let sel = new Set(["POOL 1","POOL 2","POOL 3"]);
+let shuffle = true, useMC = true;
+let run = null; // {list, i, right, wrongCnt, mode, revealed}
+
+const pools = [...new Set(Q.map(q=>q.pool))];
+const imgs = a => (a||[]).map(n=>`<img src="img/${n}.jpg" loading="lazy" alt="문제 그림">`).join("");
+const sh = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]} return a; };
+
+function home(){
+  run = null;
+  const wc = Object.keys(st.wrong).length, sc = Object.keys(st.solved).length;
+  const pick = Q.filter(q=>sel.has(q.pool)).length;
+  app.innerHTML = `
+  <h1>📘 컴퓨터시스템 중간고사</h1>
+  <div class="sub">Task Management 문제 POOL · 총 ${Q.length}문제 · 기록은 이 브라우저에 저장됩니다</div>
+  <div class="stats">
+    <div class="stat"><b>${sc}</b><span>푼 문제</span></div>
+    <div class="stat"><b style="color:var(--ok)">${Object.keys(st.ok).length}</b><span>맞힌 문제</span></div>
+    <div class="stat"><b style="color:var(--ng)">${wc}</b><span>오답</span></div>
+  </div>
+  <div class="card">
+    <b>범위 선택</b>
+    <div class="chips">${pools.map(p=>`<button class="chip ${sel.has(p)?'on':''}" data-p="${p}">${p} (${Q.filter(q=>q.pool===p).length})</button>`).join("")}</div>
+    <div class="chips"><button class="chip ${shuffle?'on':''}" id="shuf">🔀 문제 섞기</button><button class="chip ${useMC?'on':''}" id="mc">☑️ 객관식 보기 사용</button></div>
+    <button class="btn" id="go" ${pick?'':'disabled'}>문제 풀기 시작 (${pick}문제)</button>
+  </div>
+  <div class="card">
+    <b>오답 풀기</b>
+    <div class="sub" style="margin:4px 0 0">틀린 문제를 다시 풀고, 맞히면 오답노트에서 사라집니다.</div>
+    <button class="btn ng" id="wr" ${wc?'':'disabled'}>오답 풀기 (${wc}문제)</button>
+    ${wc?`<button class="btn ghost" id="wl">오답 목록 보기</button>`:''}
+  </div>
+  <button class="btn ghost" id="reset">기록 초기화</button>`;
+  app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=b.dataset.p;sel.has(p)?sel.delete(p):sel.add(p);home()});
+  $("#shuf").onclick=()=>{shuffle=!shuffle;home()};
+  $("#mc").onclick=()=>{useMC=!useMC;home()};
+  $("#go").onclick=()=>start(Q.filter(q=>sel.has(q.pool)),"all");
+  $("#wr").onclick=()=>start(Q.filter(q=>st.wrong[q.id]),"wrong");
+  if($("#wl")) $("#wl").onclick=wrongList;
+  $("#reset").onclick=()=>{ if(confirm("모든 기록을 지울까요?")){st={wrong:{},solved:{},ok:{}};save();home()} };
+}
+
+function wrongList(){
+  const list = Q.filter(q=>st.wrong[q.id]);
+  app.innerHTML = `<div class="top"><button class="back" id="b">← 홈</button></div><h1>오답 목록</h1>
+  ${list.map(q=>`<div class="card item"><span><span class="tag">${q.pool} · ${q.n}번</span><br>${q.q.slice(0,60)}…</span><button data-id="${q.id}">삭제</button></div>`).join("")||'<div class="sub">오답이 없습니다 🎉</div>'}`;
+  $("#b").onclick=home;
+  app.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{delete st.wrong[b.dataset.id];save();wrongList()});
+}
+
+function start(list, mode){
+  if(!list.length) return;
+  run = {list: shuffle ? sh(list) : list, i:0, right:0, bad:0, mode, rev:false};
+  show();
+}
+
+
+// 일치도: 단어 단위로 비교 (한글 조사 대응을 위해 3자 이상 한글 단어는 끝 1글자 제외한 어간으로 비교)
+const WORD=/[가-힣A-Za-z0-9_]+/g;
+const stem=w=>{w=w.toLowerCase();return (w.length>=3&&/[가-힣]/.test(w))?w.slice(0,-1):w};
+const plain=h=>{const d=document.createElement("div");d.innerHTML=h.replace(/<br>/g," ");return d.textContent};
+const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+function hlText(text, other){ // text 안의 단어 중 other에 포함되는 것을 파랗게
+  const o=other.toLowerCase();
+  return text.replace(WORD,w=>w.length>=2&&o.includes(stem(w))?`<span class="hl">${w}</span>`:w);
+}
+function hlHTML(html, other){ // 태그는 유지하고 텍스트 노드만 처리
+  const d=document.createElement("div");d.innerHTML=html;
+  const walk=n=>{[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3){const sp=document.createElement("span");sp.innerHTML=hlText(esc(c.textContent),other);c.replaceWith(sp)}
+    else walk(c)})};
+  walk(d);return d.innerHTML;
+}
+function matchRate(ans, mine){
+  const ws=(ans.match(WORD)||[]).filter(w=>w.length>=2);
+  if(!ws.length) return 0;
+  const m=mine.toLowerCase();
+  return Math.round(ws.filter(w=>m.includes(stem(w))).length/ws.length*100);
+}
+
+function show(){
+  const r = run, q = r.list[r.i];
+  if(!q) return done();
+  const mc = useMC && window.MC[q.id];
+  const head = `<div class="top"><button class="back" id="b">← 종료</button><div class="bar"><i style="width:${r.i/r.list.length*100}%"></i></div><span class="sub">${r.i+1}/${r.list.length}</span></div>
+  <div class="card"><span class="tag">${r.mode==='wrong'?'오답 풀기 · ':''}${q.pool} · ${q.n}번${mc?' · 객관식':' · 직접 입력'}</span>
+    <div class="q">${q.q}${imgs(q.img)}</div></div>`;
+  const ansBox = `<div class="card ans hide" id="ans">${q.a}${imgs(q.aimg)}</div>`;
+  window.scrollTo(0,0);
+  if(mc){
+    const opts = sh(mc.map((t,i)=>({t,ok:i===0})));
+    app.innerHTML = head + `<div id="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${"①②③④"[i]} ${o.t}</button>`).join("")}</div>`
+      + ansBox + `<button class="btn hide" id="nx">다음 ▶</button>`;
+    app.querySelectorAll(".opt").forEach(btn=>btn.onclick=()=>{
+      const ok = opts[btn.dataset.i].ok;
+      app.querySelectorAll(".opt").forEach((x,i)=>{x.disabled=true; if(opts[i].ok) x.classList.add("right")});
+      if(!ok) btn.classList.add("bad");
+      record(q, ok);
+      $("#ans").classList.remove("hide"); $("#nx").classList.remove("hide");
+      $("#ans").insertAdjacentHTML("afterbegin", `<b>${ok?'⭕ 정답!':'❌ 오답'}</b><br>`);
+      $("#nx").onclick=()=>{run.i++;show()};
+      $("#ans").scrollIntoView({behavior:"smooth",block:"nearest"});
+    });
+  } else {
+    app.innerHTML = head + `<textarea id="inp" placeholder="답을 입력하세요"></textarea>
+    <button class="btn" id="rev">정답 확인</button>`
+      + `<div class="card mine hide" id="mine"></div>` + ansBox
+      + `<div class="row hide" id="grade"><button class="btn ng" id="x">😢 틀렸어요</button><button class="btn ok" id="o">😄 맞혔어요</button></div>`;
+    $("#rev").onclick=()=>{
+      const v = $("#inp").value.trim(), ap = plain(q.a);
+      let hint = "";
+      if(v){ const rate = matchRate(ap, v);
+        hint = `<div class="hint">정답과 일치도 <b class="hl">${rate}%</b> · <span class="hl">파란색</span> = 정답과 일치하는 부분</div>`;
+        $("#ans").innerHTML = hlHTML(q.a, v) + imgs(q.aimg); }
+      $("#mine").innerHTML = `<small>내 답</small><br>${v?hlText(esc(v),ap):"(입력 없음)"}${hint}`;
+      ["mine","ans","grade"].forEach(id=>$("#"+id).classList.remove("hide"));
+      $("#rev").classList.add("hide"); $("#inp").readOnly=true;
+      $("#mine").scrollIntoView({behavior:"smooth",block:"nearest"});
+    };
+    $("#o").onclick=()=>{record(q,true);run.i++;show()};
+    $("#x").onclick=()=>{record(q,false);run.i++;show()};
+  }
+  $("#b").onclick=()=>{ if(confirm("풀이를 종료할까요?")) home(); };
+}
+
+function record(q, ok){
+  st.solved[q.id]=1;
+  if(ok){ run.right++; st.ok[q.id]=1; delete st.wrong[q.id]; }
+  else { run.bad++; st.wrong[q.id]=1; delete st.ok[q.id]; }
+  save();
+}
+
+function done(){
+  const r = run, total = r.right + r.bad;
+  app.innerHTML = `<h1>풀이 완료</h1>
+  <div class="card"><div class="big">${total?Math.round(r.right/total*100):0}점</div>
+  <div class="sub" style="text-align:center">맞힘 ${r.right} · 틀림 ${r.bad}</div></div>
+  ${r.bad?`<button class="btn ng" id="rw">방금 틀린 문제 다시 풀기</button>`:''}
+  ${Object.keys(st.wrong).length?`<button class="btn ghost" id="aw">전체 오답 풀기 (${Object.keys(st.wrong).length})</button>`:''}
+  <button class="btn ghost" id="h">홈으로</button>`;
+  if($("#rw")) $("#rw").onclick=()=>start(Q.filter(q=>st.wrong[q.id]&&r.list.includes(q)),"wrong");
+  if($("#aw")) $("#aw").onclick=()=>start(Q.filter(q=>st.wrong[q.id]),"wrong");
+  $("#h").onclick=home;
+}
+home();
+</script>
+</body>
+</html>
