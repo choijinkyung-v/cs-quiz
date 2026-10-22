@@ -41,6 +41,14 @@ h1{font-size:20px;margin:8px 0 4px}.sub{color:var(--sub);font-size:14px;margin-b
 textarea{width:100%;min-height:96px;border:1.5px solid var(--bd);border-radius:12px;padding:12px;font:inherit;background:var(--card);color:var(--tx);resize:vertical}
 .mine{border-left:4px solid var(--pri);white-space:pre-wrap;word-break:break-all}
 .hl{color:#2563eb;font-weight:700}@media(prefers-color-scheme:dark){.hl{color:#60a5fa}}
+.blank{display:inline-block;min-width:4.2em;min-height:1.6em;vertical-align:baseline;border-bottom:2.5px solid var(--pri);margin:0 3px;padding:0 6px;text-align:center;font-weight:700;color:var(--pri);cursor:pointer;line-height:1.5}
+.blank.on{background:rgba(79,70,229,.12);border-radius:6px}
+.blank.right{border-color:var(--ok);color:var(--ok);background:rgba(22,163,74,.14)}
+.blank.bad{border-color:var(--ng);color:var(--ng);background:rgba(220,38,38,.12)}
+.fix{display:block;font-size:12px;font-weight:600;color:var(--ok)}
+.bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip2{border:1.5px solid var(--bd);border-bottom-width:3px;background:var(--card);color:var(--tx);border-radius:10px;padding:8px 12px;font-size:15px;font-weight:600}
+.chip2:disabled{opacity:.3}
 .hint{font-size:13px;color:var(--sub);margin-top:6px}
 </style>
 </head>
@@ -56,7 +64,7 @@ try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY)) || {}); } cat
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} };
 const app = $("#app");
 let sel = new Set(["POOL 1","POOL 2","POOL 3"]);
-let shuffle = false, useMC = false;
+let shuffle = false, useMC = false, clozeMode = false;
 let run = null; // {list, i, right, wrongCnt, mode, revealed}
 
 const pools = [...new Set(Q.map(q=>q.pool))];
@@ -78,7 +86,7 @@ function home(){
   <div class="card">
     <b>범위 선택</b>
     <div class="chips">${pools.map(p=>`<button class="chip ${sel.has(p)?'on':''}" data-p="${p}">${p} (${Q.filter(q=>q.pool===p).length})</button>`).join("")}</div>
-    <div class="chips"><button class="chip ${shuffle?'on':''}" id="shuf">🔀 문제 섞기</button><button class="chip ${useMC?'on':''}" id="mc">☑️ 객관식 보기 사용</button></div>
+    <div class="chips"><button class="chip ${shuffle?'on':''}" id="shuf">🔀 문제 섞기</button><button class="chip ${useMC?'on':''}" id="mc">☑️ 객관식 보기 사용</button><button class="chip ${clozeMode?'on':''}" id="cz">🧩 빈칸 채우기</button></div>
     <button class="btn" id="go" ${pick?'':'disabled'}>문제 풀기 시작 (${pick}문제)</button>
   </div>
   <div class="card">
@@ -92,6 +100,7 @@ function home(){
   app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=b.dataset.p;sel.has(p)?sel.delete(p):sel.add(p);home()});
   $("#shuf").onclick=()=>{shuffle=!shuffle;home()};
   $("#mc").onclick=()=>{useMC=!useMC;home()};
+  $("#cz").onclick=()=>{clozeMode=!clozeMode;home()};
   $("#go").onclick=()=>start(Q.filter(q=>sel.has(q.pool)),"all");
   $("#wr").onclick=()=>start(Q.filter(q=>st.wrong[q.id]),"wrong");
   if($("#wl")) $("#wl").onclick=wrongList;
@@ -107,7 +116,8 @@ function wrongList(){
 }
 
 function start(list, mode){
-  if(!list.length) return;
+  if(clozeMode) list = list.filter(q=>window.KEY[q.id]); // 빈칸 채우기: 키워드가 있는 문제만
+  if(!list.length){ alert("빈칸 채우기로 풀 수 있는 문제가 없어요."); return; }
   run = {list: shuffle ? sh(list) : list, i:0, right:0, bad:0, mode, rev:false, res:[]};
   show();
 }
@@ -136,15 +146,61 @@ function matchRate(ans, mine){
   return Math.round(ws.filter(w=>m.includes(stem(w))).length/ws.length*100);
 }
 
+// 빈칸 채우기: 정답 속 핵심 키워드를 빈칸으로 바꾸고 보기(키워드+오답 키워드)를 클릭해 채움
+function buildCloze(html, keys){
+  const re=new RegExp("("+keys.slice().sort((a,b)=>b.length-a.length).map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")","g");
+  const d=document.createElement("div"); d.innerHTML=html; const ans=[];
+  const walk=n=>[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3){
+      const sp=document.createElement("span");
+      sp.innerHTML=esc(c.textContent).replace(re,m=>{ans.push(m);return `<span class="blank" data-b="${ans.length-1}"></span>`});
+      c.replaceWith(sp);
+    } else walk(c);
+  });
+  walk(d); return {html:d.innerHTML, ans};
+}
+function showCloze(q, head){
+  const r=run, {html,ans}=buildCloze(q.a, window.KEY[q.id]);
+  const used=new Set(ans);
+  const pool=[...new Set(Object.values(window.KEY).flat())].filter(k=>!used.has(k));
+  const items=sh([...ans.map(t=>({t})), ...sh(pool).slice(0,4).map(t=>({t}))]);
+  app.innerHTML = head + `<div class="card ans" id="sent" style="border-left-color:var(--pri)">${html}</div>
+    <div class="hint">아래 보기를 눌러 빈칸을 채우세요. 채운 빈칸을 누르면 취소돼요.</div>
+    <div class="bank" id="bank">${items.map((it,i)=>`<button class="chip2" data-c="${i}">${esc(it.t)}</button>`).join("")}</div>
+    <button class="btn" id="chk" disabled>확인</button><button class="btn hide" id="nx">다음 ▶</button>`;
+  const blanks=[...app.querySelectorAll(".blank")], fill=ans.map(()=>null); let checked=false;
+  const paint=()=>{
+    if(!checked) blanks.forEach((el,b)=>{const c=fill[b]; el.textContent=c==null?"":items[c].t; el.classList.toggle("on",c!=null)});
+    app.querySelectorAll(".chip2").forEach(ch=>ch.disabled=checked||fill.includes(+ch.dataset.c));
+    $("#chk").disabled=fill.includes(null);
+  };
+  app.querySelectorAll(".chip2").forEach(ch=>ch.onclick=()=>{const i=fill.indexOf(null); if(i<0||checked)return; fill[i]=+ch.dataset.c; paint()});
+  blanks.forEach((el,b)=>el.onclick=()=>{ if(!checked){fill[b]=null;paint()} });
+  $("#chk").onclick=()=>{
+    checked=true; let all=true;
+    blanks.forEach((el,b)=>{const ok=items[fill[b]].t===ans[b]; all=all&&ok; el.classList.add(ok?"right":"bad");
+      if(!ok) el.insertAdjacentHTML("beforeend",`<span class="fix">정답: ${esc(ans[b])}</span>`)});
+    record(q, all); paint();
+    $("#chk").classList.add("hide"); $("#nx").classList.remove("hide");
+    $("#sent").insertAdjacentHTML("afterbegin",`<b>${all?'⭕ 모두 정답!':'❌ 틀린 빈칸이 있어요'}</b><br>`);
+    $("#nx").onclick=()=>{run.i++;show()};
+  };
+  $("#b").onclick=()=>{ if(confirm("풀이를 종료할까요?")) home(); };
+  $("#pv").onclick=()=>{ if(run.i>0){ run.i--; show(); } };
+  paint();
+}
+
 function show(){
   const r = run, q = r.list[r.i];
   if(!q) return done();
+  const cloze = clozeMode && window.KEY[q.id];
   const mc = useMC && window.MC[q.id];
   const head = `<div class="top"><button class="back" id="b">← 종료</button><button class="back" id="pv" ${r.i?'':'disabled style="opacity:.3"'}>◀ 이전</button><div class="bar"><i style="width:${r.i/r.list.length*100}%"></i></div><span class="sub">${r.i+1}/${r.list.length}</span></div>
-  <div class="card"><span class="tag">${r.mode==='wrong'?'오답 풀기 · ':''}${q.pool} · ${q.n}번${mc?' · 객관식':' · 직접 입력'}</span>
+  <div class="card"><span class="tag">${r.mode==='wrong'?'오답 풀기 · ':''}${q.pool} · ${q.n}번${cloze?' · 빈칸 채우기':mc?' · 객관식':' · 직접 입력'}</span>
     <div class="q">${q.q}${imgs(q.img)}</div></div>`;
   const ansBox = `<div class="card ans hide" id="ans">${q.a}${imgs(q.aimg)}</div>`;
   window.scrollTo(0,0);
+  if(cloze) return showCloze(q, head);
   if(mc){
     const opts = sh(mc.map((t,i)=>({t,ok:i===0})));
     app.innerHTML = head + `<div id="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}">${"①②③④"[i]} ${o.t}</button>`).join("")}</div>`
