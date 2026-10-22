@@ -87,6 +87,7 @@ function home(){
     <button class="btn ng" id="wr" ${wc?'':'disabled'}>오답 풀기 (${wc}문제)</button>
     ${wc?`<button class="btn ghost" id="wl">오답 목록 보기</button>`:''}
   </div>
+  <a class="btn ghost" href="quick.html" style="text-align:center;text-decoration:none">📄 빠른 보기 (문제 + 정답)</a>
   <button class="btn ghost" id="reset">기록 초기화</button>`;
   app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=b.dataset.p;sel.has(p)?sel.delete(p):sel.add(p);home()});
   $("#shuf").onclick=()=>{shuffle=!shuffle;home()};

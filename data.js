@@ -72,3 +72,30 @@ Object.assign(window.MC, {
 "3-6":["해결된다. ready 상태 프로세스들의 weight 비율로 상대적 time slice를 정하므로","해결되지 않는다. CFS도 nice로 고정 time slice를 쓴다","해결된다. CFS는 time slice를 항상 5ms로 고정하기 때문","해결되지 않는다. CFS는 우선순위를 사용하지 않는다"],
 "3-7":["pt_regs에 사용자 레지스터 저장 → A의 tss에 커널 레지스터 저장 → B의 tss에서 복구 → B의 pt_regs로 사용자 context 복구","B의 tss 저장 → A의 pt_regs 복구 → A의 사용자 코드 실행","pt_regs 없이 tss만 사용하고 사용자 context는 저장하지 않는다","A의 heap을 B에 복사한 뒤 A를 종료한다"]
 });
+
+// 빠른 보기용 핵심 키워드 (정답 텍스트 안의 구절, 배경 색칠)
+window.KEY = {
+"1-1":["프로세스","쓰레드"],
+"1-2":["text","data","stack","heap"],
+"1-3":["커널의 도움","시스템 콜"],
+"1-4":["Code, Data, Heap","Stack, Register","독립적인 실행 흐름"],
+"1-5":["페이지테이블을 공유","write 할 때","새로운 페이지를 물리메모리에 할당","copy","페이지테이블을 업데이트"],
+"1-8":["cpu 레지스터 값들","tss","복구"],
+"2-1":["KILLABLE","SIGKILL","UNINTERRUPTIBLE","EXIT_ZOMBIE","wait()","SIGCONT","ptrace()","TASK_STOPPED","TASK_TRACED"],
+"2-2":["TASK_INTERRUPTIBLE","TASK_RUNNING(running)","TASK_RUNNING(ready)"],
+"2-3":["특권 명령어","커널 내부 자료구조","응용프로그램"],
+"2-4":["시스템 콜","인터럽트 발생"],
+"2-5a":["운영체제 공간"],
+"2-5b":["8KB"],
+"2-5c":["운영체제가 사용하는 공간","커널 스택"],
+"2-5d":["pt_regs","tss","사용자 context","context switch"],
+"2-6":["시그널","need_resched","스케줄러를 호출"],
+"3-1":["캐시 친화력"],
+"3-2":["타임 슬라이스","높은 우선순위","시스템 콜"],
+"3-3":["K번째 비트","우선순위 K"],
+"3-4a":["event wait","평균 이상"],
+"3-4b":["우선순위를 높여","time slice를 크게"],
+"3-5":["context switch가 너무 자주","상대적인 timeslice","100ms"],
+"3-6":["상대적인 timeslice","ready 상태","weight"],
+"3-7":["pt_regs","tss","복구","사용자 context"]
+};
