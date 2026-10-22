@@ -118,3 +118,26 @@ window.EXP = {
 6. 스택 주소에 <code>+4095</code>를 주는 이유: 스택이 <b>높은 주소에서 낮은 주소로 자라므로</b> 배열의 끝(맨 위)을 넘겨야 한다.<br>
 <small>※ PID 번호는 실행마다 다르다. 규칙(TGID가 같은지/다른지)이 핵심.</small>`
 };
+
+window.EXP["2-1"] = `<b>한 줄 요약: 태스크의 한살이에서 화살표 5개만 외운다</b><br>
+<b>① 식당 비유</b><br>
+- ready = 대기줄 / running = 테이블에서 식사 중(CPU 사용)<br>
+- 대기 3종 = 주문한 음식 기다림 / STOPPED·TRACED = "잠깐 멈춰요!"·감시 중<br>
+- ZOMBIE = 식사는 끝났는데 계산서를 아직 안 받아 간 상태<br><br>
+<b>② 화살표 5개</b><br>
+1. <code>fork</code> → ready (태어나자마자 줄 섬)<br>
+2. ready ⇄ running: <code>schedule</code>(뽑힘), <code>preempt</code>(시간 끝 / 높은 우선순위에 밀림)<br>
+3. running → 대기: <code>event wait</code>, <code>event occur</code>되면 → ready<br>
+4. running → STOPPED/TRACED: <code>signal</code>, 시그널(SIGCONT)로 → ready<br>
+5. running → DEAD(ZOMBIE): <code>exit</code>, 부모가 <code>wait()</code> 하면 → DEAD(EXIT_DEAD)<br><br>
+<b>③ 대기 3종 구분</b><br>
+- INTERRUPTIBLE: 시그널에 반응 (기본 대기)<br>
+- UNINTERRUPTIBLE: 시그널에 반응 안 함 (Un = 안 함) → <code>kill -9</code>도 안 먹힘<br>
+- KILLABLE: 절충, <code>SIGKILL</code> 같은 fatal signal에만 반응 ("Killable = kill만 OK")<br><br>
+<b>④ STOPPED 시그널</b><br>
+- 멈춤: SIGSTOP, SIGTSTP(Ctrl+Z), SIGTTIN, SIGTTOU → "STOP 계열 + TT 둘(터미널 입력/출력)"<br>
+- 재개: SIGCONT(continue) / TRACED: 디버거(<code>ptrace()</code>, gdb)가 붙은 상태<br>
+<small>※ PDF에는 SIGTTOU가 SIGTOUT으로 오타</small><br><br>
+<b>⑤ ZOMBIE 한 줄</b><br>
+자원은 반납했지만, 종료 사유·통계를 부모에게 전해주려고 남아 있다가 부모가 <code>wait()</code> 하면 사라진다.<br><br>
+<small>서술형은 ②의 순서(fork → ready → running → …)대로 화살표를 따라가며 쓰면 빠뜨리지 않는다.</small>`;
