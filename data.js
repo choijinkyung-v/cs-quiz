@@ -99,3 +99,22 @@ window.KEY = {
 "3-6":["상대적인 timeslice","ready 상태","weight"],
 "3-7":["pt_regs","tss","복구","사용자 context"]
 };
+
+// 빠른 보기용 해설 (접기/펼치기)
+window.EXP = {
+"1-6":`<b>핵심: fork() 한 번 → 그 다음 줄부터 부모·자식이 각각 실행</b><br>
+1. <b>before fork</b>는 fork() 전이라 <b>부모만</b> 한 번 출력.<br>
+2. fork() 반환값: 자식은 <b>0</b>, 부모는 <b>자식의 PID(양수)</b>, 실패 시 -1(→ fork error).<br>
+3. 자식(pid==0) → <code>Child</code> 출력 / 부모(else) → <code>Parent</code> 출력 후 sleep(2).<br>
+4. if/else가 끝난 뒤의 <b>after fork는 부모·자식 둘 다</b> 실행하므로 <b>2번</b> 출력.<br>
+5. 출력 값: <code>getpid()</code>는 TGID, <code>gettid</code> 시스템콜은 커널의 PID(스레드 ID). 쓰레드가 하나뿐인 프로세스라 <b>TGID = PID</b>. 부모 17560, 자식 17561처럼 자식 번호가 더 크다.<br>
+<small>※ Parent/Child 출력 순서는 스케줄링에 따라 바뀔 수 있음. 부모가 sleep(2)하므로 자식이 먼저 끝난다.</small>`,
+"1-7":`<b>핵심: clone()의 flags에 따라 "프로세스처럼" 또는 "쓰레드처럼" 만들어진다</b><br>
+1. 부모: <b>before clone</b> + <code>Parent</code> (TGID = PID = 17750, 쓰레드 1개짜리 프로세스).<br>
+2. <b>첫 번째 clone</b> (CLONE_CHILD_CLEARTID | CLONE_CHILD_SETTID): CLONE_VM·CLONE_THREAD가 없음 → 메모리를 공유하지 않는 <b>새 프로세스</b>. 새 TGID가 생겨 <b>TGID = PID = 17751</b>.<br>
+3. <b>두 번째 clone</b> (CLONE_VM | CLONE_THREAD | CLONE_SIGHAND): 부모와 메모리·시그널 핸들러 공유, <b>같은 쓰레드 그룹</b> → <b>TGID는 부모와 같은 17750</b>, PID(스레드 ID)만 새로 <b>17752</b>.<br>
+4. 그래서 Child 출력은 <code>TGID(17750), PID(17752)</code>와 <code>TGID(17751), PID(17751)</code> 두 줄.<br>
+5. 자식들은 출력 직후 sleep(2), 부모는 sleep(1) 후 <b>after clone</b> 출력하고 종료.<br>
+6. 스택 주소에 <code>+4095</code>를 주는 이유: 스택이 <b>높은 주소에서 낮은 주소로 자라므로</b> 배열의 끝(맨 위)을 넘겨야 한다.<br>
+<small>※ PID 번호는 실행마다 다르다. 규칙(TGID가 같은지/다른지)이 핵심.</small>`
+};

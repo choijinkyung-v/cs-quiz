@@ -22,6 +22,9 @@ h1{font-size:18px;margin:0}a{color:var(--pri);text-decoration:none;font-size:15p
 .q{font-weight:700;margin:2px 0 8px;word-break:keep-all}
 .a{border-top:1px dashed var(--bd);padding-top:8px;word-break:keep-all}
 .a small{color:var(--sub)}
+details.exp{margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;font-size:15px;word-break:keep-all}
+details.exp summary{cursor:pointer;font-weight:700;color:var(--pri)}
+code{background:var(--bd);border-radius:4px;padding:0 4px;font-size:.92em}
 mark{background:var(--mk);color:inherit;border-radius:4px;padding:0 3px}
 img{max-width:100%;display:block;margin-top:8px;border:1px solid var(--bd);border-radius:8px;background:#fff}
 </style>
@@ -34,7 +37,7 @@ img{max-width:100%;display:block;margin-top:8px;border:1px solid var(--bd);borde
 </div>
 <script src="data.js"></script>
 <script>
-const Q=window.QUESTIONS,K=window.KEY||{};
+const Q=window.QUESTIONS,K=window.KEY||{},EXP=window.EXP||{};
 const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 const imgs=a=>(a||[]).map(n=>`<img src="img/${n}.jpg" loading="lazy" alt="">`).join("");
 function mark(html,keys){ // 태그는 그대로 두고 텍스트 노드의 키워드만 <mark> 처리
@@ -59,7 +62,7 @@ function render(){
   document.getElementById("list").innerHTML=Q.filter(q=>cur==="전체"||q.pool===cur).map(q=>`
   <div class="card"><div class="tag">${q.pool} · ${q.n}번</div>
   <div class="q">${q.q}${imgs(q.img)}</div>
-  <div class="a">${mark(q.a,K[q.id])}${imgs(q.aimg)}</div></div>`).join("");
+  <div class="a">${mark(q.a,K[q.id])}${imgs(q.aimg)}${EXP[q.id]?`<details class="exp" open><summary>💡 해설 (접기/펼치기)</summary><div style="margin-top:6px">${EXP[q.id]}</div></details>`:""}</div></div>`).join("");
   document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{cur=b.dataset.p;render();scrollTo(0,0)});
 }
 render();
