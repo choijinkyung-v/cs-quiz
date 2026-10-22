@@ -56,7 +56,7 @@ try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY)) || {}); } cat
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} };
 const app = $("#app");
 let sel = new Set(["POOL 1","POOL 2","POOL 3"]);
-let shuffle = true, useMC = true;
+let shuffle = false, useMC = false;
 let run = null; // {list, i, right, wrongCnt, mode, revealed}
 
 const pools = [...new Set(Q.map(q=>q.pool))];
@@ -78,7 +78,7 @@ function home(){
   <div class="card">
     <b>범위 선택</b>
     <div class="chips">${pools.map(p=>`<button class="chip ${sel.has(p)?'on':''}" data-p="${p}">${p} (${Q.filter(q=>q.pool===p).length})</button>`).join("")}</div>
-    <div class="chips"><button class="chip ${shuffle?'on':''}" id="shuf">🔀 문제 섞기</button></div>
+    <div class="chips"><button class="chip ${shuffle?'on':''}" id="shuf">🔀 문제 섞기</button><button class="chip ${useMC?'on':''}" id="mc">☑️ 객관식 보기 사용</button></div>
     <button class="btn" id="go" ${pick?'':'disabled'}>문제 풀기 시작 (${pick}문제)</button>
   </div>
   <div class="card">
@@ -90,6 +90,7 @@ function home(){
   <button class="btn ghost" id="reset">기록 초기화</button>`;
   app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const p=b.dataset.p;sel.has(p)?sel.delete(p):sel.add(p);home()});
   $("#shuf").onclick=()=>{shuffle=!shuffle;home()};
+  $("#mc").onclick=()=>{useMC=!useMC;home()};
   $("#go").onclick=()=>start(Q.filter(q=>sel.has(q.pool)),"all");
   $("#wr").onclick=()=>start(Q.filter(q=>st.wrong[q.id]),"wrong");
   if($("#wl")) $("#wl").onclick=wrongList;
