@@ -2,7 +2,7 @@
 window.QUESTIONS = [
 {id:"1-1",pool:"POOL 1",n:1,q:"리눅스에서 CPU 스케줄러가 CPU를 배분하는 대상의 단위는 무엇인가?",a:"프로세스(정확히 말하면 쓰레드)"},
 {id:"1-2",pool:"POOL 1",n:2,q:"아래 그림에서 (1) 이 프로그램 명령어(어셈블리어 명령어) 부분, (2) global 이라는 변수, local 이라는 변수, dynamic 이라는 변수는 오른쪽의 가상메모리 영역 부분 중 어디 들어 있는지 각각 쓰시오.",img:["a1-000"],a:"- 명령어(코드): <b>text</b><br>- global 변수: <b>data</b><br>- local 변수: <b>stack</b><br>- dynamic(malloc): <b>heap</b>"},
-{id:"1-3",pool:"POOL 1",n:3,q:"2번의 그림에서 3GB~4GB까지는 커널 코드이다. 이 처럼 각 응용프로세스의 가상메모리에 커널 코드가 들어있어야 하는 이유는 무엇인가?",a:"그 응용프로세스가 동작할 때 커널의 도움(예, 시스템 콜)이 필요하기 때문"},
+{id:"1-3",pool:"POOL 1",n:3,q:"2번의 그림에서 3GB~4GB까지는 커널 코드이다. 이 처럼 각 응용프로세스의 가상메모리에 커널 코드가 들어있어야 하는 이유는 무엇인가?",img:["a1-000"],a:"그 응용프로세스가 동작할 때 커널의 도움(예, 시스템 콜)이 필요하기 때문"},
 {id:"1-4",pool:"POOL 1",n:4,q:"만약 한 프로세스에 쓰레드 두 개가 동시에 돌아가고 있다고 하자. 그러면 2번의 그림에서 두 쓰레드가 공유하는 부분은 어디이고 따로 사용해야 하는 부분은 어디인가? 그리고 그 이유는 무엇인가?",img:["a1-001"],a:"- 공유: <b>Code, Data, Heap</b><br>- 따로 사용: <b>Stack, Register</b><br>- 이유: 쓰레드마다 독립적인 실행 흐름(함수 호출·지역변수·현재 실행 위치)을 가져야 하므로 stack과 레지스터는 개별로 필요하고, 같은 프로세스의 코드/전역 데이터/동적 메모리는 공유해 통신과 생성 비용을 줄인다. <small>(※ PDF에 해답 없음 – 그림 기준 정리)</small>"},
 {id:"1-5",pool:"POOL 1",n:5,q:"옆의 그림을 참고하여 COW 버전의 fork()가 어떻게 동작하는지 설명하시오.",img:["a1-002"],a:"부모와 페이지테이블을 공유하다가, 메모리에 write 할 때에 새로운 페이지를 물리메모리에 할당하고 데이터를 copy 한다. 이후 그 페이지에 해당하는 페이지테이블을 업데이트 한다."},
 {id:"1-6",pool:"POOL 1",n:6,q:"아래 프로그램을 실행하면 결과가 어떻게 나올지 빈칸을 채워보시오.",img:["a1-003"],a:"실행 결과:",aimg:["a1-004"]},
@@ -54,3 +54,21 @@ window.KW = {
 "3-6":["상대","ready"],
 "3-7":["pt_regs","tss","복구"]
 };
+
+Object.assign(window.MC, {
+"1-2":["명령어: text / global: data / local: stack / dynamic: heap","명령어: data / global: text / local: heap / dynamic: stack","명령어: text / global: stack / local: data / dynamic: heap","명령어: heap / global: data / local: stack / dynamic: text"],
+"1-4":["공유: Code, Data, Heap / 개별: Stack, Register","공유: Stack, Register / 개별: Code, Data, Heap","공유: Code, Stack / 개별: Data, Heap, Register","전부 공유한다"],
+"1-5":["부모와 페이지테이블을 공유하다가 write 시 새 물리 페이지를 할당·복사하고 페이지테이블을 갱신한다","fork 즉시 부모의 모든 물리 메모리를 복사한다","자식은 메모리를 전혀 갖지 않고 부모가 끝날 때까지 기다린다","write 시 부모의 페이지를 삭제하고 자식이 가져간다"],
+"1-6":["before fork / (Parent: TGID·PID 17560) / (Child: TGID·PID 17561) / after fork가 두 번 출력 (부모·자식 각각)","before fork가 두 번 출력되고 Parent만 출력","Child만 출력되고 after fork는 한 번","fork error 출력"],
+"1-7":["Parent(17750/17750), Child(TGID 17750, PID 17752), Child(TGID·PID 17751), after clone","Parent와 Child 둘 다 TGID가 서로 다르다","Child가 출력되지 않고 after clone만 출력","두 Child 모두 TGID가 17750이다"],
+"1-8":["HW 문맥은 프로세스가 쓰던 CPU 레지스터 값들이며, 전환 시 tss에 저장하고 다음 프로세스의 값을 복구하기 위해 유지한다","HW 문맥은 디스크의 파일 목록이며 부팅 시 필요하다","HW 문맥은 가상메모리의 heap 영역이다","HW 문맥은 페이지테이블이며 전환 때 삭제된다"],
+"2-1":["TASK_KILLABLE: UNINTERRUPTIBLE이라 kill -9로 안 죽는 문제를 해결, fatal signal(SIGKILL)에만 반응","TASK_KILLABLE: 모든 시그널에 반응하는 대기 상태","TASK_STOPPED: exit() 호출 후 부모의 wait()를 기다리는 상태","EXIT_ZOMBIE: 모든 자원을 유지한 채 실행 중인 상태"],
+"2-3":["user level: 응용/라이브러리 수행. kernel level: 커널 수행, 특권 명령어·커널 자료구조 접근 가능","user level이 특권 명령어를 수행할 수 있다","kernel level은 응용프로그램만 실행한다","둘은 권한 차이가 없다"],
+"2-4":["시스템 콜, 인터럽트 발생","malloc 호출, 변수 선언","함수 호출, return","fork 호출, 파일 닫기 호출 (일반 함수)"],
+"2-5d":["pt_regs: 사용자→커널 전환 시 사용자 context 레지스터 / tss: 프로세스 간 커널 context switch 시 이전 커널 레지스터","pt_regs: 프로세스 간 context switch 시 레지스터 / tss: 사용자→커널 전환 시 레지스터","둘 다 사용자 context 레지스터를 저장한다","둘 다 같은 내용을 중복 저장한다"],
+"2-6":["시그널 수신 확인 후 핸들러 호출, need_resched가 1이면 스케줄러 호출","메모리 전체를 디스크로 swap out, 프로세스 종료","페이지테이블 삭제, 파일 닫기","아무 일도 하지 않는다"],
+"3-2":["타임 슬라이스 소진 또는 대기 상태 전환 / 더 높은 우선순위 태스크가 깨어남 / 스케줄링 관련 시스템 콜","malloc 호출 시, 변수 선언 시","printf 호출 시, 파일 열기 시","부팅할 때만"],
+"3-5":["올바르지 않다. 5ms마다 문맥교환이 너무 잦으며, ready 프로세스들의 상대적 우선순위로 timeslice(예: 100ms)를 정해야 한다","올바르다. 5ms 문맥교환이 가장 효율적이다","올바르다. nice가 같으면 항상 5ms가 최적이다","올바르지 않다. timeslice를 더 줄여야 한다"],
+"3-6":["해결된다. ready 상태 프로세스들의 weight 비율로 상대적 time slice를 정하므로","해결되지 않는다. CFS도 nice로 고정 time slice를 쓴다","해결된다. CFS는 time slice를 항상 5ms로 고정하기 때문","해결되지 않는다. CFS는 우선순위를 사용하지 않는다"],
+"3-7":["pt_regs에 사용자 레지스터 저장 → A의 tss에 커널 레지스터 저장 → B의 tss에서 복구 → B의 pt_regs로 사용자 context 복구","B의 tss 저장 → A의 pt_regs 복구 → A의 사용자 코드 실행","pt_regs 없이 tss만 사용하고 사용자 context는 저장하지 않는다","A의 heap을 B에 복사한 뒤 A를 종료한다"]
+});
