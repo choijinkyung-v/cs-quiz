@@ -107,7 +107,7 @@ function wrongList(){
 
 function start(list, mode){
   if(!list.length) return;
-  run = {list: shuffle ? sh(list) : list, i:0, right:0, bad:0, mode, rev:false};
+  run = {list: shuffle ? sh(list) : list, i:0, right:0, bad:0, mode, rev:false, res:[]};
   show();
 }
 
@@ -139,7 +139,7 @@ function show(){
   const r = run, q = r.list[r.i];
   if(!q) return done();
   const mc = useMC && window.MC[q.id];
-  const head = `<div class="top"><button class="back" id="b">← 종료</button><div class="bar"><i style="width:${r.i/r.list.length*100}%"></i></div><span class="sub">${r.i+1}/${r.list.length}</span></div>
+  const head = `<div class="top"><button class="back" id="b">← 종료</button><button class="back" id="pv" ${r.i?'':'disabled style="opacity:.3"'}>◀ 이전</button><div class="bar"><i style="width:${r.i/r.list.length*100}%"></i></div><span class="sub">${r.i+1}/${r.list.length}</span></div>
   <div class="card"><span class="tag">${r.mode==='wrong'?'오답 풀기 · ':''}${q.pool} · ${q.n}번${mc?' · 객관식':' · 직접 입력'}</span>
     <div class="q">${q.q}${imgs(q.img)}</div></div>`;
   const ansBox = `<div class="card ans hide" id="ans">${q.a}${imgs(q.aimg)}</div>`;
@@ -178,9 +178,13 @@ function show(){
     $("#x").onclick=()=>{record(q,false);run.i++;show()};
   }
   $("#b").onclick=()=>{ if(confirm("풀이를 종료할까요?")) home(); };
+  $("#pv").onclick=()=>{ if(run.i>0){ run.i--; show(); } };
 }
 
 function record(q, ok){
+  const prev = run.res[run.i]; // 이전 문제로 돌아와 다시 풀면 앞의 채점을 되돌림
+  if(prev===true) run.right--; else if(prev===false) run.bad--;
+  run.res[run.i] = ok;
   st.solved[q.id]=1;
   if(ok){ run.right++; st.ok[q.id]=1; delete st.wrong[q.id]; }
   else { run.bad++; st.wrong[q.id]=1; delete st.ok[q.id]; }
