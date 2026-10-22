@@ -81,7 +81,7 @@ window.KEY = {
 "1-4":["Code, Data, Heap","Stack, Register","독립적인 실행 흐름"],
 "1-5":["페이지테이블을 공유","write 할 때","새로운 페이지를 물리메모리에 할당","copy","페이지테이블을 업데이트"],
 "1-8":["cpu 레지스터 값들","tss","복구"],
-"2-1":["KILLABLE","SIGKILL","UNINTERRUPTIBLE","EXIT_ZOMBIE","wait()","SIGCONT","ptrace()","TASK_STOPPED","TASK_TRACED"],
+"2-1":["시그널에 반응하지 않음","kill -9","fatal signal","SIGCONT","ptrace()","EXIT_ZOMBIE","wait()"],
 "2-2":["TASK_INTERRUPTIBLE","TASK_RUNNING(running)","TASK_RUNNING(ready)"],
 "2-3":["특권 명령어","커널 내부 자료구조","응용프로그램"],
 "2-4":["시스템 콜","인터럽트 발생"],
